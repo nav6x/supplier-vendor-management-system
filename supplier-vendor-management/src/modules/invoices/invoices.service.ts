@@ -18,14 +18,14 @@ export class InvoicesService {
 
   async findAll(): Promise<Invoice[]> {
     return this.invoicesRepository.find({
-      relations: ['purchaseOrder'],
+      relations: ['purchaseOrder', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.product'],
     });
   }
 
   async findOne(id: number): Promise<Invoice> {
     return this.invoicesRepository.findOne({
       where: { id },
-      relations: ['purchaseOrder'],
+      relations: ['purchaseOrder', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.product'],
     });
   }
 

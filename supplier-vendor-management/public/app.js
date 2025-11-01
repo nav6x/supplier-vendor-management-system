@@ -9,173 +9,461 @@ const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
 const loginForm = document.getElementById('loginForm');
 const content = document.getElementById('content');
 const mainNav = document.querySelectorAll('#mainNav a');
+const usernameDisplay = document.getElementById('usernameDisplay');
 
-loginLink.addEventListener('click', () => {
-    loginModal.show();
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
 });
 
-logoutLink.addEventListener('click', logout);
-
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            authToken = data.access_token;
-            
-            const payload = JSON.parse(atob(authToken.split('.')[1]));
-            currentUser = { 
-                id: payload.sub, 
-                username: payload.username, 
-                roleId: payload.roleId 
-            };
-            
-            console.log('Current user:', currentUser);
-            
-            loginModal.hide();
-            loginLink.classList.add('d-none');
-            logoutLink.classList.remove('d-none');
-            
-            const userManagementNav = document.getElementById('userManagementNav');
-            if (currentUser.roleId === 1) {
-                userManagementNav.style.display = 'block';
-            } else {
-                userManagementNav.style.display = 'none';
-            }
-            
-            showDashboard();
-        } else {
-            alert('Login failed. Please check your credentials.');
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        alert('An error occurred during login.');
+function initializeApp() {
+    if (!authToken) {
+        usernameDisplay.textContent = 'Guest';
     }
-});
+    
+    setupEventListeners();
+}
 
-mainNav.forEach(link => {
-    link.addEventListener('click', (e) => {
+function setupEventListeners() {
+    loginLink.addEventListener('click', () => {
+        loginModal.show();
+    });
+
+    logoutLink.addEventListener('click', logout);
+
+    loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const view = e.target.getAttribute('data-view');
-        switch (view) {
-            case 'dashboard':
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                authToken = data.access_token;
+                
+                const payload = JSON.parse(atob(authToken.split('.')[1]));
+                currentUser = { 
+                    id: payload.sub, 
+                    username: payload.username, 
+                    roleId: payload.roleId 
+                };
+                
+                console.log('Current user:', currentUser);
+                
+                loginModal.hide();
+                loginLink.classList.add('d-none');
+                logoutLink.classList.remove('d-none');
+                
+                usernameDisplay.textContent = currentUser.username;
+                
+                const userManagementNav = document.getElementById('userManagementNav');
+                if (currentUser.roleId === 1) {
+                    userManagementNav.style.display = 'block';
+                } else {
+                    userManagementNav.style.display = 'none';
+                }
+                
                 showDashboard();
-                break;
-            case 'suppliers':
-                showSuppliers();
-                break;
-            case 'products':
-                showProducts();
-                break;
-            case 'purchase-orders':
-                showPurchaseOrders();
-                break;
-            case 'invoices':
-                showInvoices();
-                break;
-            case 'reports':
-                showReports();
-                break;
-            case 'user-management':
-                showUserManagement();
-                break;
+            } else {
+                alert('Login failed. Please check your credentials.');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('An error occurred during login.');
         }
     });
-});
+
+    mainNav.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            mainNav.forEach(navLink => {
+                navLink.classList.remove('active');
+            });
+            
+            e.target.classList.add('active');
+            
+            const view = e.target.getAttribute('data-view');
+            switch (view) {
+                case 'dashboard':
+                    showDashboard();
+                    break;
+                case 'suppliers':
+                    showSuppliers();
+                    break;
+                case 'products':
+                    showProducts();
+                    break;
+                case 'purchase-orders':
+                    showPurchaseOrders();
+                    break;
+                case 'invoices':
+                    showInvoices();
+                    break;
+                case 'reports':
+                    showReports();
+                    break;
+                case 'user-management':
+                    showUserManagement();
+                    break;
+            }
+        });
+    });
+}
+
+
 
 function showDashboard() {
     content.innerHTML = `
         <div class="container-fluid">
-            <div class="row">
+            <div class="row mb-4">
                 <div class="col-12">
-                    <h2 class="mb-4">Dashboard</h2>
+                    <h2 class="widget-title">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard Overview
+                    </h2>
+                    <p class="text-muted">Welcome back! Here's what's happening in your supply chain.</p>
                 </div>
             </div>
             
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-primary h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary">
-                                <i class="bi bi-building me-2"></i>Suppliers
-                            </h5>
-                            <p class="card-text">Manage your supplier information and contacts.</p>
-                            <button class="btn btn-outline-primary" data-view="suppliers">
-                                <i class="bi bi-eye me-1"></i>View Suppliers
-                            </button>
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="stats-icon widget-primary">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h6 class="stats-title">TOTAL SUPPLIERS</h6>
+                                <h3 class="stats-value" id="totalSuppliers">0</h3>
+                                <p class="stats-change text-success mb-0">
+                                    <i class="bi bi-arrow-up me-1"></i>12% from last month
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-success h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title text-success">
-                                <i class="bi bi-box-seam me-2"></i>Products
-                            </h5>
-                            <p class="card-text">Manage your product catalog and categories.</p>
-                            <button class="btn btn-outline-success" data-view="products">
-                                <i class="bi bi-eye me-1"></i>View Products
-                            </button>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="stats-icon widget-success">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h6 class="stats-title">TOTAL PRODUCTS</h6>
+                                <h3 class="stats-value" id="totalProducts">0</h3>
+                                <p class="stats-change text-success mb-0">
+                                    <i class="bi bi-arrow-up me-1"></i>8% from last month
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-info h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title text-info">
-                                <i class="bi bi-file-earmark-text me-2"></i>Purchase Orders
-                            </h5>
-                            <p class="card-text">Create and manage purchase orders.</p>
-                            <button class="btn btn-outline-info" data-view="purchase-orders">
-                                <i class="bi bi-eye me-1"></i>View POs
-                            </button>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="stats-icon widget-info">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h6 class="stats-title">PENDING ORDERS</h6>
+                                <h3 class="stats-value" id="pendingOrders">0</h3>
+                                <p class="stats-change text-warning mb-0">
+                                    <i class="bi bi-arrow-up me-1"></i>3% from last month
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-warning h-100 shadow-sm">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="stats-icon widget-warning">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <div class="stats-info">
+                                <h6 class="stats-title">DUE INVOICES</h6>
+                                <h3 class="stats-value" id="dueInvoices">0</h3>
+                                <p class="stats-change text-danger mb-0">
+                                    <i class="bi bi-arrow-down me-1"></i>5% from last month
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-xl-3 col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                        </div>
                         <div class="card-body">
-                            <h5 class="card-title text-warning">
-                                <i class="bi bi-receipt me-2"></i>Invoices
-                            </h5>
-                            <p class="card-text">Manage invoices and payments.</p>
-                            <button class="btn btn-outline-warning" data-view="invoices">
-                                <i class="bi bi-eye me-1"></i>View Invoices
-                            </button>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-sm mb-2" data-view="suppliers">
+                                    <i class="bi bi-building me-1"></i> Add Supplier
+                                </button>
+                                <button class="btn btn-success btn-sm mb-2" data-view="products">
+                                    <i class="bi bi-box-seam me-1"></i> Add Product
+                                </button>
+                                <button class="btn btn-info btn-sm mb-2" data-view="purchase-orders">
+                                    <i class="bi bi-file-earmark-text me-1"></i> Create PO
+                                </button>
+                                <button class="btn btn-warning btn-sm" data-view="invoices">
+                                    <i class="bi bi-receipt me-1"></i> Record Invoice
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-danger h-100 shadow-sm">
+                <div class="col-xl-6 col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Top Suppliers</h6>
+                        </div>
                         <div class="card-body">
-                            <h5 class="card-title text-danger">
-                                <i class="bi bi-graph-up me-2"></i>Reports
-                            </h5>
-                            <p class="card-text">View system reports and analytics.</p>
-                            <button class="btn btn-outline-danger" data-view="reports">
-                                <i class="bi bi-eye me-1"></i>View Reports
-                            </button>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Supplier</th>
+                                            <th>Orders</th>
+                                            <th>Rating</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>ABC Supplies Co.</td>
+                                            <td>24</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-1">★★★★☆</span>
+                                                    <small class="text-muted">4.2</small>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>XYZ Manufacturing</td>
+                                            <td>18</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-1">★★★★★</span>
+                                                    <small class="text-muted">4.8</small>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Global Tech Solutions</td>
+                                            <td>12</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-1">★★★★☆</span>
+                                                    <small class="text-muted">4.0</small>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-warning">Pending</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="recent-activity">
+                                <div class="activity-item">
+                                    <div class="activity-icon widget-primary">
+                                        <i class="bi bi-file-earmark-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6 class="activity-title">New Purchase Order Created</h6>
+                                        <p class="activity-text mb-1">PO #1245 for ABC Supplies Co.</p>
+                                        <small class="activity-time text-muted">2 hours ago</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon widget-success">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6 class="activity-title">Invoice Paid</h6>
+                                        <p class="activity-text mb-1">Invoice #789 for $2,500</p>
+                                        <small class="activity-time text-muted">5 hours ago</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon widget-info">
+                                        <i class="bi bi-person-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6 class="activity-title">New Supplier Added</h6>
+                                        <p class="activity-text mb-1">XYZ Manufacturing</p>
+                                        <small class="activity-time text-muted">Yesterday</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon widget-danger">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6 class="activity-title">Invoice Overdue</h6>
+                                        <p class="activity-text mb-1">Invoice #782 due 3 days ago</p>
+                                        <small class="activity-time text-muted">2 days ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-building"></i>
+                            <h4 class="mb-0 ms-2">Suppliers</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Supplier Network</h5>
+                                <p class="widget-description">Manage your supplier relationships</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-primary btn-sm" data-view="suppliers">
+                                    <i class="bi bi-eye me-1"></i>View Suppliers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-box-seam"></i>
+                            <h4 class="mb-0 ms-2">Products</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Product Catalog</h5>
+                                <p class="widget-description">Manage your product inventory</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-success btn-sm" data-view="products">
+                                    <i class="bi bi-eye me-1"></i>View Products
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <h4 class="mb-0 ms-2">Purchase Orders</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Order Management</h5>
+                                <p class="widget-description">Create and track purchase orders</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-info btn-sm" data-view="purchase-orders">
+                                    <i class="bi bi-eye me-1"></i>View Orders
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-receipt"></i>
+                            <h4 class="mb-0 ms-2">Invoices</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Invoice Tracking</h5>
+                                <p class="widget-description">Manage invoices and payments</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-warning btn-sm" data-view="invoices">
+                                    <i class="bi bi-eye me-1"></i>View Invoices
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-graph-up"></i>
+                            <h4 class="mb-0 ms-2">Reports</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Analytics</h5>
+                                <p class="widget-description">View insights and reports</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-danger btn-sm" data-view="reports">
+                                    <i class="bi bi-eye me-1"></i>View Reports
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="widget-card h-100">
+                        <div class="widget-header">
+                            <i class="bi bi-currency-dollar"></i>
+                            <h4 class="mb-0 ms-2">Financial Summary</h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-content">
+                                <h5 class="widget-title mb-2">Monthly Spend</h5>
+                                <p class="widget-value">$45,678</p>
+                                <p class="widget-description">Total spend for this month</p>
+                            </div>
+                            <div class="widget-footer">
+                                <button class="btn btn-secondary btn-sm" data-view="reports">
+                                    <i class="bi bi-graph-up me-1"></i>View Financials
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     `;
+    
+    updateDashboardStats();
     
     content.querySelectorAll('button[data-view]').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -201,23 +489,87 @@ function showDashboard() {
     });
 }
 
+
+async function updateDashboardStats() {
+    try {
+        const suppliersResponse = await fetch(`${API_BASE_URL}/suppliers`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        if (suppliersResponse.ok) {
+            const suppliers = await suppliersResponse.json();
+            document.getElementById('totalSuppliers').textContent = suppliers.length;
+        }
+        
+        const productsResponse = await fetch(`${API_BASE_URL}/products`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        if (productsResponse.ok) {
+            const products = await productsResponse.json();
+            document.getElementById('totalProducts').textContent = products.length;
+        }
+        
+        const poResponse = await fetch(`${API_BASE_URL}/purchase-orders`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        if (poResponse.ok) {
+            const purchaseOrders = await poResponse.json();
+            const pendingOrders = purchaseOrders.filter(po => po.status.toLowerCase() === 'pending').length;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+        }
+        
+        const invoicesResponse = await fetch(`${API_BASE_URL}/invoices`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        if (invoicesResponse.ok) {
+            const invoices = await invoicesResponse.json();
+            const dueInvoices = invoices.filter(inv => {
+                const dueDate = new Date(inv.dueDate);
+                const today = new Date();
+                return dueDate < today && inv.status.toLowerCase() !== 'paid';
+            }).length;
+            document.getElementById('dueInvoices').textContent = dueInvoices;
+        }
+    } catch (error) {
+        console.error('Error updating dashboard stats:', error);
+    }
+}
+
 function showSuppliers() {
     content.innerHTML = `
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-building me-2"></i>Suppliers
-                        </h2>
+                        <div>
+                            <h2>
+                                <i class="bi bi-building me-2"></i>Supplier Management
+                            </h2>
+                            <p class="text-muted">Manage your supplier network and relationships</p>
+                        </div>
                         <button class="btn btn-primary" id="addSupplierBtn">
                             <i class="bi bi-plus-lg me-1"></i>Add New Supplier
                         </button>
                     </div>
                     
-                    <div class="card border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <i class="bi bi-list me-2"></i>Supplier List
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list me-2"></i>All Suppliers
+                            </h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="supplierSearch" placeholder="Search suppliers...">
+                                <button class="btn btn-outline-secondary">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div id="suppliersList">
@@ -362,22 +714,33 @@ function showProducts() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-box-seam me-2"></i>Products
-                        </h2>
+                        <div>
+                            <h2>
+                                <i class="bi bi-box-seam me-2"></i>Product Management
+                            </h2>
+                            <p class="text-muted">Manage your product catalog and categories</p>
+                        </div>
                         <div class="btn-group">
                             <button class="btn btn-primary" id="addProductBtn">
                                 <i class="bi bi-plus-lg me-1"></i>Add New Product
                             </button>
-                            <button class="btn btn-secondary" id="manageCategoriesBtn">
+                            <button class="btn btn-outline-secondary" id="manageCategoriesBtn">
                                 <i class="bi bi-tags me-1"></i>Manage Categories
                             </button>
                         </div>
                     </div>
                     
-                    <div class="card border-success">
-                        <div class="card-header bg-success text-white">
-                            <i class="bi bi-list me-2"></i>Product Catalog
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list me-2"></i>Product Catalog
+                            </h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="productSearch" placeholder="Search products...">
+                                <button class="btn btn-outline-secondary">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div id="productsList">
@@ -575,8 +938,113 @@ async function assignProductToCategory(productId, categoryId) {
     console.log(`Would assign product ${productId} to category ${categoryId}`);
 }
 
-function editProduct(productId) {
-    alert(`Edit functionality for product ID ${productId} would be implemented here.`);
+async function editProduct(productId) {
+    try {
+        // Load categories first to populate the dropdown
+        const categoriesResponse = await fetch(`${API_BASE_URL}/products/categories`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        let categories = [];
+        if (categoriesResponse.ok) {
+            categories = await categoriesResponse.json();
+        }
+        
+        // Get the product data from the API
+        const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch product: ${response.status}`);
+        }
+        
+        const product = await response.json();
+        
+        // Update the content area with the edit form
+        content.innerHTML = `
+            <h2>Edit Product ID ${productId}</h2>
+            <form id="editProductForm">
+                <div class="mb-3">
+                    <label for="editProductName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="editProductName" value="${product.name}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editProductDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="editProductDescription" rows="3">${product.description || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="editProductPrice" class="form-label">Price</label>
+                    <input type="number" class="form-control" id="editProductPrice" step="0.01" min="0" value="${product.price}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editProductCategory" class="form-label">Category</label>
+                    <select class="form-select" id="editProductCategory">
+                        <option value="">Select a category (if applicable)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Product</button>
+                <button type="button" class="btn btn-secondary" id="cancelEditProduct">Cancel</button>
+            </form>
+        `;
+        
+        const categorySelect = document.getElementById('editProductCategory');
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+        
+        if (product.productCategories && product.productCategories.length > 0) {
+            const firstCategoryId = product.productCategories[0].categoryId;
+            categorySelect.value = firstCategoryId;
+        }
+        
+        document.getElementById('editProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateProduct(productId);
+        });
+        
+        document.getElementById('cancelEditProduct').addEventListener('click', showProducts);
+    } catch (error) {
+        console.error('Error loading product for edit:', error);
+        alert('Error loading product for editing.');
+    }
+}
+
+async function updateProduct(productId) {
+    const updatedProductData = {
+        name: document.getElementById('editProductName').value,
+        description: document.getElementById('editProductDescription').value,
+        price: parseFloat(document.getElementById('editProductPrice').value)
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(updatedProductData)
+        });
+        
+        if (response.ok) {
+            alert('Product updated successfully!');
+            showProducts();
+        } else {
+            const error = await response.text();
+            alert(`Failed to update product: ${error}`);
+        }
+    } catch (error) {
+        console.error('Error updating product:', error);
+        alert('Error updating product.');
+    }
 }
 
 async function deleteProduct(productId) {
@@ -758,17 +1226,36 @@ function showPurchaseOrders() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-file-earmark-text me-2"></i>Purchase Orders
-                        </h2>
+                        <div>
+                            <h2>
+                                <i class="bi bi-file-earmark-text me-2"></i>Purchase Orders
+                            </h2>
+                            <p class="text-muted">Create and manage purchase orders</p>
+                        </div>
                         <button class="btn btn-primary" id="createPOBtn">
                             <i class="bi bi-plus-lg me-1"></i>Create New PO
                         </button>
                     </div>
                     
-                    <div class="card border-info">
-                        <div class="card-header bg-info text-white">
-                            <i class="bi bi-list me-2"></i>Purchase Order List
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list me-2"></i>Purchase Order List
+                            </h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="poSearch" placeholder="Search orders...">
+                                <select class="form-select me-2">
+                                    <option>All Statuses</option>
+                                    <option>Pending</option>
+                                    <option>Approved</option>
+                                    <option>Shipped</option>
+                                    <option>Completed</option>
+                                    <option>Cancelled</option>
+                                </select>
+                                <button class="btn btn-outline-secondary">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div id="purchaseOrdersList">
@@ -1201,17 +1688,34 @@ function showInvoices() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-receipt me-2"></i>Invoices
-                        </h2>
+                        <div>
+                            <h2>
+                                <i class="bi bi-receipt me-2"></i>Invoice Management
+                            </h2>
+                            <p class="text-muted">Manage invoices and payment tracking</p>
+                        </div>
                         <button class="btn btn-primary" id="createInvoiceBtn">
                             <i class="bi bi-plus-lg me-1"></i>Create New Invoice
                         </button>
                     </div>
                     
-                    <div class="card border-warning">
-                        <div class="card-header bg-warning text-white">
-                            <i class="bi bi-list me-2"></i>Invoice List
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list me-2"></i>Invoice List
+                            </h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="invoiceSearch" placeholder="Search invoices...">
+                                <select class="form-select me-2">
+                                    <option>All Statuses</option>
+                                    <option>Pending</option>
+                                    <option>Paid</option>
+                                    <option>Overdue</option>
+                                </select>
+                                <button class="btn btn-outline-secondary">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div id="invoicesList">
@@ -1623,66 +2127,83 @@ function showReports() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-graph-up me-2"></i>Reports & Analytics
-                        </h2>
-                        <button class="btn btn-secondary" disabled>
-                            <i class="bi bi-download me-1"></i>Export Report
-                        </button>
+                        <div>
+                            <h2>
+                                <i class="bi bi-graph-up me-2"></i>Reports & Analytics
+                            </h2>
+                            <p class="text-muted">View business insights and analytics</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary">
+                                <i class="bi bi-download me-1"></i>Export All
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar-range"></i> Date Range
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="row g-4">
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 border-primary shadow-sm">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-building me-2"></i>Supplier Performance
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Analyze supplier performance metrics and delivery times.</p>
-                                    <button class="btn btn-primary report-btn" data-report="supplier">
-                                        <i class="bi bi-bar-chart me-1"></i>View Report
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 border-info shadow-sm">
-                                <div class="card-header bg-info text-white">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-file-earmark-text me-2"></i>Purchase Order Status
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Track purchase order statuses and completion rates.</p>
-                                    <button class="btn btn-info report-btn" data-report="po">
-                                        <i class="bi bi-bar-chart me-1"></i>View Report
-                                    </button>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card widget-card hover-lift">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="widget-icon widget-primary">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h4 class="mb-1">Supplier Performance</h4>
+                                            <p class="text-muted mb-2">Analyze supplier performance metrics</p>
+                                            <button class="btn btn-primary btn-sm report-btn" data-report="supplier">
+                                                <i class="bi bi-bar-chart me-1"></i>View Report
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 border-success shadow-sm">
-                                <div class="card-header bg-success text-white">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-currency-dollar me-2"></i>Financial Summary
-                                    </h5>
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card widget-card hover-lift">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="widget-icon widget-info">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h4 class="mb-1">Purchase Order Status</h4>
+                                            <p class="text-muted mb-2">Track purchase order completion</p>
+                                            <button class="btn btn-info btn-sm report-btn" data-report="po">
+                                                <i class="bi bi-bar-chart me-1"></i>View Report
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <p class="card-text">View financial summaries and metrics.</p>
-                                    <button class="btn btn-success report-btn" data-report="financial">
-                                        <i class="bi bi-bar-chart me-1"></i>View Report
-                                    </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card widget-card hover-lift">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="widget-icon widget-success">
+                                            <i class="bi bi-currency-dollar"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h4 class="mb-1">Financial Summary</h4>
+                                            <p class="text-muted mb-2">View financial summaries</p>
+                                            <button class="btn btn-success btn-sm report-btn" data-report="financial">
+                                                <i class="bi bi-bar-chart me-1"></i>View Report
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="card mt-4 border-dark">
-                        <div class="card-header bg-dark text-white">
+                    <div class="card mt-4">
+                        <div class="card-header">
                             <h4 class="mb-0">
                                 <i class="bi bi-file-bar-graph me-2"></i>Report Preview
                             </h4>
@@ -1938,10 +2459,21 @@ function logout() {
     loginLink.classList.remove('d-none');
     logoutLink.classList.add('d-none');
     
+    // Reset username display
+    document.getElementById('usernameDisplay').textContent = 'Guest';
+    
     const userManagementNav = document.getElementById('userManagementNav');
     userManagementNav.style.display = 'none';
     
-    content.innerHTML = '<h2>Welcome to Supplier & Vendor Management System</h2><p>Please login to continue.</p>';
+    content.innerHTML = `
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-cart-check" style="font-size: 4rem; color: #4361ee;"></i>
+            </div>
+            <h2 class="mb-3">Welcome to Supplier & Vendor Management System</h2>
+            <p class="lead text-muted">Please login to continue and manage your suppliers and vendors.</p>
+        </div>
+    `;
 }
 
 function showUserManagement() {
@@ -1950,18 +2482,35 @@ function showUserManagement() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>
-                            <i class="bi bi-people me-2"></i>User Management
-                        </h2>
+                        <div>
+                            <h2>
+                                <i class="bi bi-people me-2"></i>User Management
+                            </h2>
+                            <p class="text-muted">Manage system users and permissions</p>
+                        </div>
                         <button class="btn btn-primary" id="addUserBtn">
                             <i class="bi bi-plus-lg me-1"></i>Add New User
                         </button>
                     </div>
                     
-                    <div class="card border-primary">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-list me-2"></i>User List</span>
-                            <span id="userCount">0 users</span>
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list me-2"></i>User List
+                            </h5>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="userSearch" placeholder="Search users...">
+                                <select class="form-select me-2">
+                                    <option>All Roles</option>
+                                    <option>Administrator</option>
+                                    <option>Procurement Manager</option>
+                                    <option>Finance User</option>
+                                    <option>Standard User</option>
+                                </select>
+                                <button class="btn btn-outline-secondary">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div id="usersList">
@@ -2081,12 +2630,8 @@ async function loadUsers() {
         console.log('Users response status:', response.status);
         
         if (response.ok) {
-            let users = await response.json();
+            const users = await response.json();
             console.log('Users loaded:', users);
-            
-            users = applyFiltersAndSorting(users);
-            
-            document.getElementById('userCount').textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
             
             displayUsers(users);
         } else {
@@ -2101,47 +2646,7 @@ async function loadUsers() {
     }
 }
 
-function applyFiltersAndSorting(users) {
-    const searchUsername = document.getElementById('searchUsername')?.value.toLowerCase() || '';
-    const filterRole = document.getElementById('filterRole')?.value || '';
-    const sortOption = document.getElementById('sortUsers')?.value || 'username-asc';
-    
-    let filteredUsers = users.filter(user => {
-        const matchesUsername = !searchUsername || user.username.toLowerCase().includes(searchUsername);
-        
-        const matchesRole = !filterRole || user.roleId == filterRole;
-        
-        return matchesUsername && matchesRole;
-    });
-    
-    filteredUsers.sort((a, b) => {
-        switch (sortOption) {
-            case 'username-asc':
-                return a.username.localeCompare(b.username);
-            case 'username-desc':
-                return b.username.localeCompare(a.username);
-            case 'role-asc':
-                return (a.role?.roleName || '').localeCompare(b.role?.roleName || '');
-            case 'role-desc':
-                return (b.role?.roleName || '').localeCompare(a.role?.roleName || '');
-            case 'id-asc':
-                return a.id - b.id;
-            case 'id-desc':
-                return b.id - a.id;
-            default:
-                return a.username.localeCompare(b.username);
-        }
-    });
-    
-    return filteredUsers;
-}
 
-function clearFilters() {
-    document.getElementById('searchUsername').value = '';
-    document.getElementById('filterRole').value = '';
-    document.getElementById('sortUsers').value = 'username-asc';
-    loadUsers();
-}
 
 function displayUsers(users) {
     const usersList = document.getElementById('usersList');
@@ -2151,7 +2656,7 @@ function displayUsers(users) {
             <div class="text-center py-5">
                 <i class="bi bi-person-x fs-1 text-muted"></i>
                 <h4 class="mt-3">No users found</h4>
-                <p class="text-muted">Try adjusting your search or filter criteria</p>
+                <p class="text-muted">No users available in the system</p>
             </div>
         `;
         return;

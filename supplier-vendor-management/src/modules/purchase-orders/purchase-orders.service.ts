@@ -15,7 +15,7 @@ export class PurchaseOrdersService {
   ) {}
 
   async create(createPurchaseOrderDto: CreatePurchaseOrderDto): Promise<PurchaseOrder> {
-    // Create the purchase order
+
     const purchaseOrder = this.purchaseOrdersRepository.create({
       supplierId: createPurchaseOrderDto.supplierId,
       createdById: createPurchaseOrderDto.createdById,
@@ -25,7 +25,6 @@ export class PurchaseOrdersService {
 
     const savedPurchaseOrder = await this.purchaseOrdersRepository.save(purchaseOrder);
 
-    // Create the purchase order items
     const purchaseOrderItems = createPurchaseOrderDto.items.map(item => 
       this.purchaseOrderItemsRepository.create({
         purchaseOrderId: savedPurchaseOrder.id,

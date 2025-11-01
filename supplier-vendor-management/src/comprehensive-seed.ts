@@ -21,7 +21,6 @@ async function bootstrap() {
   try {
     console.log('Starting comprehensive database seeding...');
     
-    // Get repositories
     const roleRepo: Repository<Role> = app.get(getRepositoryToken(Role));
     const userRepo: Repository<User> = app.get(getRepositoryToken(User));
     const supplierRepo: Repository<Supplier> = app.get(getRepositoryToken(Supplier));
@@ -34,7 +33,6 @@ async function bootstrap() {
     const paymentRepo: Repository<Payment> = app.get(getRepositoryToken(Payment));
     const supplierProductRepo: Repository<SupplierProduct> = app.get(getRepositoryToken(SupplierProduct));
     
-    // Clear existing data
     console.log('Clearing existing data...');
     await paymentRepo.query('SET FOREIGN_KEY_CHECKS = 0');
     await paymentRepo.clear();
@@ -50,7 +48,6 @@ async function bootstrap() {
     await roleRepo.clear();
     await paymentRepo.query('SET FOREIGN_KEY_CHECKS = 1');
     
-    // Create roles
     console.log('Creating roles...');
     const adminRole = roleRepo.create({ roleName: 'Administrator' });
     const procurementRole = roleRepo.create({ roleName: 'Procurement Manager' });
@@ -59,7 +56,6 @@ async function bootstrap() {
     
     await roleRepo.save([adminRole, procurementRole, financeRole, standardRole]);
     
-    // Create users
     console.log('Creating users...');
     const hashedPassword = await bcrypt.hash('password', 10);
     const users = [
@@ -74,7 +70,6 @@ async function bootstrap() {
     
     await userRepo.save(users);
     
-    // Create suppliers
     console.log('Creating suppliers...');
     const suppliers = [
       supplierRepo.create({ 
@@ -121,7 +116,6 @@ async function bootstrap() {
     
     await supplierRepo.save(suppliers);
     
-    // Create categories
     console.log('Creating categories...');
     const categories = [
       categoryRepo.create({ name: 'Electronics' }),
@@ -136,7 +130,6 @@ async function bootstrap() {
     
     await categoryRepo.save(categories);
     
-    // Create products
     console.log('Creating products...');
     const products = [
       productRepo.create({ name: 'Business Laptop', description: 'High-performance laptop for business use', price: 1299.99 }),
@@ -163,7 +156,6 @@ async function bootstrap() {
     
     await productRepo.save(products);
     
-    // Create product-category relationships
     console.log('Creating product-category relationships...');
     const productCategories = [];
     for (let i = 0; i < products.length; i++) {
@@ -178,7 +170,6 @@ async function bootstrap() {
     
     await productCategoryRepo.save(productCategories);
     
-    // Create supplier-product relationships
     console.log('Creating supplier-product relationships...');
     const supplierProducts = [];
     for (let i = 0; i < suppliers.length; i++) {
@@ -189,14 +180,13 @@ async function bootstrap() {
         supplierProducts.push(supplierProductRepo.create({ 
           supplierId: supplier.id, 
           productId: product.id,
-          price: product.price * (0.9 + Math.random() * 0.2) // Random price variation
+          price: product.price * (0.9 + Math.random() * 0.2)
         }));
       }
     }
     
     await supplierProductRepo.save(supplierProducts);
     
-    // Create purchase orders
     console.log('Creating purchase orders...');
     const purchaseOrders = [];
     const statuses = ['Pending', 'Approved', 'Shipped', 'Completed', 'Cancelled'];
@@ -206,7 +196,6 @@ async function bootstrap() {
       const createdBy = users.filter(u => u.roleId === procurementRole.id)[Math.floor(Math.random() * 2)];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
       
-      // Generate dates
       const orderDate = new Date();
       orderDate.setDate(orderDate.getDate() - Math.floor(Math.random() * 30));
       
@@ -220,12 +209,10 @@ async function bootstrap() {
     
     await purchaseOrderRepo.save(purchaseOrders);
     
-    // Create purchase order items
     console.log('Creating purchase order items...');
     const purchaseOrderItems = [];
     for (let i = 0; i < purchaseOrders.length; i++) {
       const purchaseOrder = purchaseOrders[i];
-      // Create 1-3 items per order
       const itemCount = 1 + Math.floor(Math.random() * 3);
       
       for (let j = 0; j < itemCount; j++) {
@@ -244,7 +231,6 @@ async function bootstrap() {
     
     await purchaseOrderItemRepo.save(purchaseOrderItems);
     
-    // Create invoices
     console.log('Creating invoices...');
     const invoices = [];
     for (let i = 0; i < purchaseOrders.length; i++) {
@@ -270,7 +256,6 @@ async function bootstrap() {
     
     await invoiceRepo.save(invoices);
     
-    // Create payments
     console.log('Creating payments...');
     const payments = [];
     for (let i = 0; i < invoices.length; i++) {
@@ -279,7 +264,6 @@ async function bootstrap() {
         const paymentDate = new Date(invoice.dueDate);
         paymentDate.setDate(paymentDate.getDate() - Math.floor(Math.random() * 10));
         
-        // Calculate amount based on PO items
         const poItems = purchaseOrderItems.filter(item => 
           item.purchaseOrderId === invoice.purchaseOrderId
         );
