@@ -135,7 +135,7 @@ Maintains supplier information including contact details and ratings. The email 
 | `rating` | TINYINT | Nullable, range 0-5 |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP |
-
+V
 ### `products`
 Stores product catalog information including name, description, and price. The price field uses DECIMAL(10,2) for accurate financial calculations. This table is referenced by purchase_order_items, supplier_products, and product_categories.
 | Column | Type | Constraints |
